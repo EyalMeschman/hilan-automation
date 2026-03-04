@@ -1,7 +1,9 @@
 import asyncio
+import json
 import logging
 import re
 from enum import StrEnum
+from pathlib import Path
 
 from playwright.async_api import Frame, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
@@ -11,6 +13,7 @@ from src.utils import Utils
 LOGIN_URL = "https://tipalti.net.hilan.co.il/login"
 HOME_URL = "https://tipalti.net.hilan.co.il/Hilannetv2/ng/personal-file/home"
 TASK_BUTTON_SELECTOR = 'button[aria-label*="לטיפול"]'
+OVERRIDES_FILE = Path(__file__).resolve().parents[2] / "report_overrides.json"
 
 
 class ReportType(StrEnum):
@@ -80,14 +83,34 @@ def extract_day_letter(day_text: str) -> DayLetter:
     return DayLetter(match.group(1))
 
 
-async def fill_report(page: Page, logger: logging.Logger):
+def extract_date(day_text: str) -> str:
+    match = re.search(r"(\d{2}/\d{2})", day_text)
+    if not match:
+        raise ValueError(f"Could not extract date from: '{day_text}'")
+    return match.group(1)
+
+
+def load_overrides() -> dict[str, ReportType]:
+    if not OVERRIDES_FILE.exists():
+        return {}
+    data = json.loads(OVERRIDES_FILE.read_text(encoding="utf-8"))
+    return {date: ReportType(report_type) for date, report_type in data.items()}
+
+
+async def fill_report(page: Page, logger: logging.Logger, overrides: dict[str, ReportType]):
     frame = await get_error_handling_frame(page)
 
     day_text = await frame.locator(".ROC").first.inner_text()
-    day_letter = extract_day_letter(day_text)
-    report_type = REPORT_TYPE_BY_DAY.get(day_letter)
+    date_str = extract_date(day_text)
+
+    report_type = overrides.get(date_str)
     if not report_type:
-        raise ValueError(f"No report type for day letter '{day_letter}'")
+        day_letter = extract_day_letter(day_text)
+        report_type = REPORT_TYPE_BY_DAY.get(day_letter)
+        if not report_type:
+            raise ValueError(f"No report type for day letter '{day_letter}'")
+    else:
+        logger.info(f"Loaded {len(overrides)} date override(s): {overrides}")
 
     await frame.locator("select").first.select_option(label=report_type)
 
@@ -113,13 +136,14 @@ async def test_hilan(
     filled = 0
     remaining = await wait_for_tasks(page)
     logger.info(f"Found {remaining} pending reports to fill")
+    overrides = load_overrides()
 
     while remaining > 0:
         button = page.locator(TASK_BUTTON_SELECTOR).first
         filled += 1
         logger.info(f"[{filled}] Opening report...")
         await button.click()
-        await fill_report(page, logger)
+        await fill_report(page, logger, overrides)
         remaining = await wait_for_tasks(page)
 
     logger.info(f"Done. Filled {filled} reports, no tasks remaining.")
