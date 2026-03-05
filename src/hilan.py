@@ -9,8 +9,6 @@ from typing import Protocol
 from playwright.async_api import Frame, Page
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
-from src.utils import Utils
-
 LOGIN_URL = "https://tipalti.net.hilan.co.il/login"
 HOME_URL = "https://tipalti.net.hilan.co.il/Hilannetv2/ng/personal-file/home"
 TASK_BUTTON_SELECTOR = 'button[aria-label*="לטיפול"]'
@@ -85,10 +83,7 @@ class AutomationCallbacks(Protocol):
     def on_confirm(self, date_str: str, report_type: str) -> tuple[ConfirmAction, str | None]: ...
 
 
-async def login(page: Page):
-    username = Utils.get_mandatory_env("HILAN_USERNAME")
-    password = Utils.get_mandatory_env("HILAN_PASSWORD")
-
+async def login(page: Page, username: str, password: str):
     await page.goto(LOGIN_URL)
     await page.get_by_placeholder("מספר העובד").fill(username)
     await page.get_by_placeholder("סיסמה").fill(password)

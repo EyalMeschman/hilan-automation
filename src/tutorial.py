@@ -22,25 +22,54 @@ TUTORIALS: dict[ConfigKey, list[dict[str, str]]] = {
                 "enter them again next time you open the app."
             ),
         },
+        {
+            "title": "Password Security",
+            "body": (
+                "When 'Remember me' is checked, your password\n"
+                "is stored securely in your macOS Keychain.\n\n"
+                "To view it, open the Keychain Access app\n"
+                'and search for "hilan-automation".'
+            ),
+        },
+        {
+            "title": "App Configuration",
+            "body": (
+                "Your preferences (username, settings) are\n"
+                "saved in a config file located at:\n\n"
+                "~/.hilan-automation/config.json\n\n"
+                "You can edit or delete this file at any time."
+            ),
+        },
     ],
     ConfigKey.SHOW_MAIN_TUTORIAL: [
         {
             "title": "Main Dashboard",
             "body": (
-                "This is the main dashboard where you configure\n"
-                "which dates and report types to automate.\n\n"
-                "You can add date overrides, review them in\n"
-                "the table, and run the automation when ready."
+                "You're all set! From here you can review\n"
+                "your schedule, adjust specific dates, and\n"
+                "run the automation with a single click.\n\n"
+                "Let's walk through the key features."
             ),
         },
         {
-            "title": "Adding Date Overrides",
+            "title": "Default Schedule",
             "body": (
-                "Use the 'From' and 'To' date pickers to select\n"
-                "a date range, pick a report type from the\n"
-                "dropdown, then click 'Add' to queue them.\n\n"
-                "Each date in the range will appear in the table\n"
-                "with the selected report type."
+                "Each day is filled with a default report type:\n\n"
+                "  Mon, Tue, Thu  →  Present\n"
+                "  Sun, Wed          →  Work from Home\n\n"
+                "If this matches your schedule, you're good\n"
+                "to go, no extra setup needed."
+            ),
+        },
+        {
+            "title": "Date Overrides",
+            "body": (
+                "Need to report a sick day, vacation, or\n"
+                "anything other than the default? Use date\n"
+                "overrides to change specific dates.\n\n"
+                "Pick a 'From' and 'To' date, choose a report\n"
+                "type from the dropdown, and click 'Add'.\n"
+                "The overrides will appear in the table below."
             ),
         },
         {

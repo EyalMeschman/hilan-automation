@@ -1,16 +1,16 @@
 import asyncio
-import os
 import tkinter as tk
 from datetime import datetime, timedelta
 from pathlib import Path
 from tkinter import messagebox, ttk
 
+import keyring
 import ttkbootstrap as ttb
 from ttkbootstrap.widgets import DateEntry
 
 from src.automation import run as run_automation
 from src.config import ConfigKey, clear_fields, load_config, update_config
-from src.credentials import ensure_credentials
+from src.credentials import KEYRING_SERVICE, ensure_credentials
 from src.hilan import ReportType
 from src.tutorial import show_tutorial_if_needed
 from src.ui.tk_utils import suppress_bgerror
@@ -139,7 +139,8 @@ class HilanLauncher:
             self.tree.insert("", "end", values=(date, report_type))
 
     def _logout(self):
-        clear_fields(ConfigKey.USERNAME, ConfigKey.PASSWORD)
+        keyring.delete_password(KEYRING_SERVICE, self.username)
+        clear_fields(ConfigKey.USERNAME)
 
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -164,13 +165,18 @@ class HilanLauncher:
             )
             return
 
-        os.environ["HILAN_USERNAME"] = self.username
-        os.environ["HILAN_PASSWORD"] = self.password
-
         confirm = self.confirm_var.get()
 
         self.root.withdraw()
-        result = asyncio.run(run_automation(self.root, self.overrides, confirm_before_save=confirm))
+        result = asyncio.run(
+            run_automation(
+                self.root,
+                self.overrides,
+                username=self.username,
+                password=self.password,
+                confirm_before_save=confirm,
+            )
+        )
         self.root.deiconify()
 
         if result.user_exit:

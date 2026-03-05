@@ -15,7 +15,7 @@ from src.hilan import (
     wait_for_tasks,
 )
 from src.ui.dialogs import TkCallbacks
-from src.utils import BROWSER_LAUNCH_ARGS, Utils
+from src.utils import BROWSER_LAUNCH_ARGS, cover_footprints
 
 
 @dataclass(slots=True)
@@ -29,7 +29,9 @@ class AutomationResult:
         return self.error is None
 
 
-async def run(root: tk.Tk, overrides: dict[str, ReportType], *, confirm_before_save: bool = False) -> AutomationResult:
+async def run(
+    root: tk.Tk, overrides: dict[str, ReportType], *, username: str, password: str, confirm_before_save: bool = False
+) -> AutomationResult:
     logger = Logger.create()
     logger.setLevel(logging.DEBUG)
     callbacks = TkCallbacks(root)
@@ -49,13 +51,13 @@ async def run(root: tk.Tk, overrides: dict[str, ReportType], *, confirm_before_s
             bypass_csp=True,
             ignore_https_errors=True,
         )
-        await Utils.cover_footprints(context)
+        await cover_footprints(context)
 
         page = await context.new_page()
         page.on("console", lambda msg: logger.debug(msg.text))
 
         try:
-            await login(page)
+            await login(page, username, password)
         except PlaywrightTimeout:
             logger.exception("Login timed out")
             return AutomationResult(error="Login failed. Please check your Employee ID and Password.")

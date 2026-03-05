@@ -4,7 +4,7 @@ import logging
 class Logger:
     @staticmethod
     def create() -> logging.Logger:
-        log = logging.getLogger(__name__)
+        log = logging.getLogger("hilan_automation")
         if not log.hasHandlers():
             formatter = logging.Formatter(
                 "[%(asctime)s] p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",

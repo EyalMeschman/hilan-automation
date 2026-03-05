@@ -1,8 +1,12 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+import keyring
+
 from src.config import ConfigKey, load_config, update_config
 from src.tutorial import show_tutorial_if_needed
+
+KEYRING_SERVICE = "hilan-automation"
 
 
 class CredentialsDialog:
@@ -36,7 +40,7 @@ class CredentialsDialog:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=(4, 0))
-        ttk.Button(btn_frame, text="Continue", command=self._submit).pack(side="left", padx=(0, 8))
+        ttk.Button(btn_frame, text="Login", command=self._submit).pack(side="left", padx=(0, 8))
         ttk.Button(btn_frame, text="Exit", command=self._on_close).pack(side="left")
 
         self.password_entry.bind("<Return>", lambda _: self._submit())
@@ -59,7 +63,8 @@ class CredentialsDialog:
             return
 
         if self.remember_var.get():
-            update_config(**{ConfigKey.USERNAME: username, ConfigKey.PASSWORD: password})
+            update_config(**{ConfigKey.USERNAME: username})
+            keyring.set_password(KEYRING_SERVICE, username, password)
 
         self.result = {"username": username, "password": password}
         self.dialog.destroy()
@@ -76,7 +81,7 @@ def ensure_credentials(root: tk.Tk) -> tuple[str, str] | None:
     """
     config = load_config()
     username = config.get(ConfigKey.USERNAME, "")
-    password = config.get(ConfigKey.PASSWORD, "")
+    password = keyring.get_password(KEYRING_SERVICE, username) if username else ""
 
     if username and password:
         return username, password

@@ -8,7 +8,6 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 
 class ConfigKey(StrEnum):
     USERNAME = "username"
-    PASSWORD = "password"
     CONFIRM_BEFORE_SAVE = "confirm_before_save"
     SHOW_LOGIN_TUTORIAL = "show_login_tutorial"
     SHOW_MAIN_TUTORIAL = "show_main_tutorial"
