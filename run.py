@@ -1,14 +1,19 @@
 import asyncio
 import os
-import re
 import tkinter as tk
+from datetime import datetime, timedelta
 from pathlib import Path
 from tkinter import messagebox, ttk
 
+import ttkbootstrap as ttb
+from ttkbootstrap.widgets import DateEntry
+
 from src.automation import AutomationResult
 from src.automation import run as run_automation
-from src.credentials import clear_config, ensure_credentials
+from src.config import clear_config, load_config, update_config
+from src.credentials import ensure_credentials
 from src.scanners.hilan_scanner_test import ReportType
+from src.tutorial import show_tutorial_if_needed
 
 REPORT_TYPE_VALUES = [member.value for member in ReportType]
 CHROME_APP_PATH = Path("/Applications/Google Chrome.app")
@@ -23,7 +28,6 @@ class HilanLauncher:
         self.overrides: dict[str, str] = {}
 
         self._build_ui()
-        self.root.eval("tk::PlaceWindow . center")
 
     def _build_ui(self):
         main = ttk.Frame(self.root, padding=16)
@@ -32,20 +36,28 @@ class HilanLauncher:
         override_frame = ttk.LabelFrame(main, text="Date Overrides", padding=8)
         override_frame.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
-        ttk.Label(override_frame, text="Date (DD/MM):").grid(row=0, column=0, padx=(0, 4))
-        self.date_entry = ttk.Entry(override_frame, width=8)
-        self.date_entry.grid(row=0, column=1, padx=(0, 12))
+        ttk.Label(override_frame, text="From:").grid(row=0, column=0, padx=(0, 4))
+        self.from_date = DateEntry(override_frame, dateformat="%d/%m/%Y", width=12)
+        self.from_date.grid(row=0, column=1, padx=(0, 12))
+        self.from_date.button.pack_configure(padx=(4, 0))
+        self.from_date.bind("<<DateEntrySelected>>", lambda _: self._sync_to_date())
 
-        ttk.Label(override_frame, text="Report Type:").grid(row=0, column=2, padx=(0, 4))
+        ttk.Label(override_frame, text="To:").grid(row=0, column=2, padx=(0, 4))
+        self.to_date = DateEntry(override_frame, dateformat="%d/%m/%Y", width=12)
+        self.to_date.grid(row=0, column=3, padx=(0, 12))
+        self.to_date.button.pack_configure(padx=(4, 0))
+        self.to_date.bind("<<DateEntrySelected>>", lambda _: self._clamp_from_date())
+
+        ttk.Label(override_frame, text="Report Type:").grid(row=1, column=0, padx=(0, 4), pady=(8, 0))
         self.type_combo = ttk.Combobox(
             override_frame,
             values=REPORT_TYPE_VALUES,
             state="readonly",
             width=24,
         )
-        self.type_combo.grid(row=0, column=3, padx=(0, 12))
+        self.type_combo.grid(row=1, column=1, columnspan=2, sticky="w", pady=(8, 0))
 
-        ttk.Button(override_frame, text="Add", command=self._add_override).grid(row=0, column=4)
+        ttk.Button(override_frame, text="Add", command=self._add_override).grid(row=1, column=3, sticky="e", pady=(8, 0))
 
         table_frame = ttk.Frame(main)
         table_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 8))
@@ -64,14 +76,40 @@ class HilanLauncher:
         btn_frame = ttk.Frame(main)
         btn_frame.grid(row=2, column=0, sticky="ew")
 
-        ttk.Button(btn_frame, text="Remove Selected", command=self._remove_selected).pack(side="left")
+        saved_confirm = load_config().get("confirm_before_save", True)
+        self.confirm_var = tk.BooleanVar(value=saved_confirm)
+        self.confirm_var.trace_add("write", lambda *_: update_config(confirm_before_save=self.confirm_var.get()))
+        ttk.Checkbutton(btn_frame, text="Confirm before saving", variable=self.confirm_var).pack(side="left")
+
+        ttk.Button(btn_frame, text="Remove Selected", command=self._remove_selected).pack(side="left", padx=(8, 0))
         ttk.Button(btn_frame, text="Logout", command=self._logout).pack(side="left", padx=(8, 0))
+        ttk.Button(btn_frame, text="Exit", command=self.root.destroy).pack(side="left", padx=(8, 0))
         ttk.Button(btn_frame, text="Run", command=self._run).pack(side="right")
 
+        self.root.eval("tk::PlaceWindow . center")
+        show_tutorial_if_needed(self.root, "main")
+
+    def _sync_to_date(self):
+        self.to_date.set_date(self.from_date.get_date())
+
+    def _clamp_from_date(self):
+        if self.to_date.get_date() < self.from_date.get_date():
+            self.from_date.set_date(self.to_date.get_date())
+
     def _add_override(self):
-        raw_date = self.date_entry.get().strip()
-        if not re.fullmatch(r"\d{2}/\d{2}", raw_date):
-            messagebox.showwarning("Invalid date", "Date must be in DD/MM format (e.g. 02/03).")
+        fmt = "%d/%m/%Y"
+        from_str = self.from_date.entry.get().strip()
+        to_str = self.to_date.entry.get().strip()
+
+        try:
+            start = datetime.strptime(from_str, fmt)
+            end = datetime.strptime(to_str, fmt)
+        except ValueError:
+            messagebox.showwarning("Invalid date", "Please select valid dates.")
+            return
+
+        if start > end:
+            messagebox.showwarning("Invalid range", "'From' date must be before or equal to 'To' date.")
             return
 
         selected = self.type_combo.get()
@@ -79,9 +117,12 @@ class HilanLauncher:
             messagebox.showwarning("No type", "Please select a report type.")
             return
 
-        self.overrides[raw_date] = selected
+        current = start
+        while current <= end:
+            self.overrides[current.strftime("%d/%m")] = selected
+            current += timedelta(days=1)
+
         self._refresh_tree()
-        self.date_entry.delete(0, "end")
 
     def _remove_selected(self):
         selection = self.tree.selection()
@@ -127,14 +168,16 @@ class HilanLauncher:
         os.environ["HILAN_PASSWORD"] = self.password
 
         overrides = {date: ReportType(val) for date, val in self.overrides.items()}
+        confirm = self.confirm_var.get()
 
         self.root.destroy()
-        result = asyncio.run(run_automation(overrides))
-        _show_result(result)
+        result = asyncio.run(run_automation(overrides, confirm_before_save=confirm))
+        if not result.user_exit:
+            _show_result(result)
 
 
 def _show_result(result: AutomationResult):
-    popup = tk.Tk()
+    popup = ttb.Window(themename="darkly")
     popup.withdraw()
 
     if not result.success:
@@ -148,7 +191,7 @@ def _show_result(result: AutomationResult):
 
 
 def main():
-    root = tk.Tk()
+    root = ttb.Window(themename="darkly")
     root.withdraw()
 
     credentials = ensure_credentials(root)
