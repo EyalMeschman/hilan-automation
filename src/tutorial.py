@@ -1,11 +1,10 @@
-import json
 import tkinter as tk
 from tkinter import ttk
 
-from src.config import CONFIG_DIR, CONFIG_FILE, load_config
+from src.config import ConfigKey, load_config, update_config
 
-TUTORIALS: dict[str, list[dict[str, str]]] = {
-    "login": [
+TUTORIALS: dict[ConfigKey, list[dict[str, str]]] = {
+    ConfigKey.SHOW_LOGIN_TUTORIAL: [
         {
             "title": "Welcome!",
             "body": (
@@ -24,7 +23,7 @@ TUTORIALS: dict[str, list[dict[str, str]]] = {
             ),
         },
     ],
-    "main": [
+    ConfigKey.SHOW_MAIN_TUTORIAL: [
         {
             "title": "Main Dashboard",
             "body": (
@@ -57,31 +56,19 @@ TUTORIALS: dict[str, list[dict[str, str]]] = {
     ],
 }
 
-_CONFIG_KEYS: dict[str, str] = {
-    "login": "show_login_tutorial",
-    "main": "show_main_tutorial",
-}
 
-
-def _should_show(tutorial_name: str) -> bool:
-    key = _CONFIG_KEYS[tutorial_name]
+def _should_show(key: ConfigKey) -> bool:
     return load_config().get(key, True)
 
 
-def _set_dont_show(tutorial_name: str):
-    config = load_config()
-    config[_CONFIG_KEYS[tutorial_name]] = False
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(
-        json.dumps(config, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+def _set_dont_show(key: ConfigKey):
+    update_config(**{key: False})
 
 
 class TutorialDialog:
-    def __init__(self, parent: tk.Toplevel | tk.Tk, tutorial_name: str):
-        self.tutorial_name = tutorial_name
-        self.steps = TUTORIALS[tutorial_name]
+    def __init__(self, parent: tk.Toplevel | tk.Tk, key: ConfigKey):
+        self.key = key
+        self.steps = TUTORIALS[key]
         self.current = 0
 
         self.dialog = tk.Toplevel(parent)
@@ -172,15 +159,15 @@ class TutorialDialog:
 
     def _finish(self):
         if self.dont_show_var.get():
-            _set_dont_show(self.tutorial_name)
+            _set_dont_show(self.key)
         self.dialog.destroy()
 
 
-def show_tutorial_if_needed(parent: tk.Toplevel | tk.Tk, tutorial_name: str):
-    if tutorial_name not in TUTORIALS:
+def show_tutorial_if_needed(parent: tk.Toplevel | tk.Tk, key: ConfigKey):
+    if key not in TUTORIALS:
         return
-    if not _should_show(tutorial_name):
+    if not _should_show(key):
         return
 
-    dialog = TutorialDialog(parent, tutorial_name)
+    dialog = TutorialDialog(parent, key)
     parent.wait_window(dialog.dialog)

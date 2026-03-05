@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from playwright.async_api import Browser, async_playwright
 
 from logger import Logger
-from src.utils import Utils
+from src.utils import BROWSER_LAUNCH_ARGS, Utils
 
 load_dotenv(".env.defaults")
 load_dotenv(".env", override=True)
@@ -22,10 +22,7 @@ async def browser():
         browser = await p.chromium.launch(
             channel="chrome",
             headless=False,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--disable-features=IsolateOrigins,site-per-process",
-            ],
+            args=BROWSER_LAUNCH_ARGS,
         )
         yield browser
         await browser.close()
@@ -37,7 +34,7 @@ async def page(browser: Browser, logger: logging.Logger):
         bypass_csp=True,
         ignore_https_errors=True,
     )
-    Utils.cover_footprints(context)
+    await Utils.cover_footprints(context)
 
     page = await context.new_page()
     page.on("console", lambda msg: logger.debug(msg.text))

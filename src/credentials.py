@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from src.config import load_config, save_config
+from src.config import ConfigKey, load_config, update_config
 from src.tutorial import show_tutorial_if_needed
 
 
@@ -48,7 +48,7 @@ class CredentialsDialog:
         y = (self.dialog.winfo_screenheight() - h) // 2
         self.dialog.geometry(f"+{x}+{y}")
 
-        show_tutorial_if_needed(self.dialog, "login")
+        show_tutorial_if_needed(self.dialog, ConfigKey.SHOW_LOGIN_TUTORIAL)
 
     def _submit(self):
         username = self.username_entry.get().strip()
@@ -59,7 +59,7 @@ class CredentialsDialog:
             return
 
         if self.remember_var.get():
-            save_config(username, password)
+            update_config(**{ConfigKey.USERNAME: username, ConfigKey.PASSWORD: password})
 
         self.result = {"username": username, "password": password}
         self.dialog.destroy()
@@ -75,8 +75,8 @@ def ensure_credentials(root: tk.Tk) -> tuple[str, str] | None:
     Returns None if the user closes the dialog without submitting.
     """
     config = load_config()
-    username = config.get("username", "")
-    password = config.get("password", "")
+    username = config.get(ConfigKey.USERNAME, "")
+    password = config.get(ConfigKey.PASSWORD, "")
 
     if username and password:
         return username, password

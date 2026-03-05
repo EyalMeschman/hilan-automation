@@ -8,12 +8,12 @@ from tkinter import messagebox, ttk
 import ttkbootstrap as ttb
 from ttkbootstrap.widgets import DateEntry
 
-from src.automation import AutomationResult
 from src.automation import run as run_automation
-from src.config import clear_config, load_config, update_config
+from src.config import ConfigKey, clear_fields, load_config, update_config
 from src.credentials import ensure_credentials
-from src.scanners.hilan_scanner_test import ReportType
+from src.hilan import ReportType
 from src.tutorial import show_tutorial_if_needed
+from src.ui.tk_utils import suppress_bgerror
 
 REPORT_TYPE_VALUES = [member.value for member in ReportType]
 CHROME_APP_PATH = Path("/Applications/Google Chrome.app")
@@ -25,7 +25,7 @@ class HilanLauncher:
         self.root.title("Hilan Automation")
         self.root.resizable(False, False)
         self.username, self.password = credentials
-        self.overrides: dict[str, str] = {}
+        self.overrides: dict[str, ReportType] = {}
 
         self._build_ui()
 
@@ -76,9 +76,9 @@ class HilanLauncher:
         btn_frame = ttk.Frame(main)
         btn_frame.grid(row=2, column=0, sticky="ew")
 
-        saved_confirm = load_config().get("confirm_before_save", True)
+        saved_confirm = load_config().get(ConfigKey.CONFIRM_BEFORE_SAVE, True)
         self.confirm_var = tk.BooleanVar(value=saved_confirm)
-        self.confirm_var.trace_add("write", lambda *_: update_config(confirm_before_save=self.confirm_var.get()))
+        self.confirm_var.trace_add("write", lambda *_: update_config(**{ConfigKey.CONFIRM_BEFORE_SAVE: self.confirm_var.get()}))
         ttk.Checkbutton(btn_frame, text="Confirm before saving", variable=self.confirm_var).pack(side="left")
 
         ttk.Button(btn_frame, text="Remove Selected", command=self._remove_selected).pack(side="left", padx=(8, 0))
@@ -87,7 +87,7 @@ class HilanLauncher:
         ttk.Button(btn_frame, text="Run", command=self._run).pack(side="right")
 
         self.root.eval("tk::PlaceWindow . center")
-        show_tutorial_if_needed(self.root, "main")
+        show_tutorial_if_needed(self.root, ConfigKey.SHOW_MAIN_TUTORIAL)
 
     def _sync_to_date(self):
         self.to_date.set_date(self.from_date.get_date())
@@ -119,7 +119,7 @@ class HilanLauncher:
 
         current = start
         while current <= end:
-            self.overrides[current.strftime("%d/%m")] = selected
+            self.overrides[current.strftime("%d/%m")] = ReportType(selected)
             current += timedelta(days=1)
 
         self._refresh_tree()
@@ -139,7 +139,7 @@ class HilanLauncher:
             self.tree.insert("", "end", values=(date, report_type))
 
     def _logout(self):
-        clear_config()
+        clear_fields(ConfigKey.USERNAME, ConfigKey.PASSWORD)
 
         for widget in self.root.winfo_children():
             widget.destroy()
@@ -167,31 +167,27 @@ class HilanLauncher:
         os.environ["HILAN_USERNAME"] = self.username
         os.environ["HILAN_PASSWORD"] = self.password
 
-        overrides = {date: ReportType(val) for date, val in self.overrides.items()}
         confirm = self.confirm_var.get()
 
-        self.root.destroy()
-        result = asyncio.run(run_automation(overrides, confirm_before_save=confirm))
-        if not result.user_exit:
-            _show_result(result)
+        self.root.withdraw()
+        result = asyncio.run(run_automation(self.root, self.overrides, confirm_before_save=confirm))
+        self.root.deiconify()
 
+        if result.user_exit:
+            return
 
-def _show_result(result: AutomationResult):
-    popup = ttb.Window(themename="darkly")
-    popup.withdraw()
-
-    if not result.success:
-        messagebox.showerror("Automation Failed", f"Failed after filling {result.filled} report(s).\n\n{result.error}", parent=popup)
-    elif result.filled == 0:
-        messagebox.showinfo("No Reports", "No pending reports were found.", parent=popup)
-    else:
-        messagebox.showinfo("Success", f"Successfully filled {result.filled} report(s).", parent=popup)
-
-    popup.destroy()
+        if not result.success:
+            msg = f"Failed after filling {result.filled} report(s).\n\n{result.error}"
+            messagebox.showerror("Automation Failed", msg, parent=self.root)
+        elif result.filled == 0:
+            messagebox.showinfo("No Reports", "No pending reports were found.", parent=self.root)
+        else:
+            messagebox.showinfo("Success", f"Successfully filled {result.filled} report(s).", parent=self.root)
 
 
 def main():
     root = ttb.Window(themename="darkly")
+    suppress_bgerror(root)
     root.withdraw()
 
     credentials = ensure_credentials(root)
