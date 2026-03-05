@@ -1,29 +1,8 @@
-import json
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox, ttk
 
-CONFIG_DIR = Path.home() / ".hilan-automation"
-CONFIG_FILE = CONFIG_DIR / "config.json"
-
-
-def load_config() -> dict:
-    if not CONFIG_FILE.exists():
-        return {}
-    return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
-
-
-def save_config(username: str, password: str):
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(
-        json.dumps({"username": username, "password": password}, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-
-
-def clear_config():
-    if CONFIG_FILE.exists():
-        CONFIG_FILE.unlink()
+from src.config import load_config, save_config
+from src.tutorial import show_tutorial_if_needed
 
 
 class CredentialsDialog:
@@ -55,7 +34,10 @@ class CredentialsDialog:
         self.remember_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(frame, text="Remember me", variable=self.remember_var).grid(row=3, column=0, columnspan=2, sticky="w", pady=(4, 8))
 
-        ttk.Button(frame, text="Continue", command=self._submit).grid(row=4, column=0, columnspan=2, pady=(4, 0))
+        btn_frame = ttk.Frame(frame)
+        btn_frame.grid(row=4, column=0, columnspan=2, pady=(4, 0))
+        ttk.Button(btn_frame, text="Continue", command=self._submit).pack(side="left", padx=(0, 8))
+        ttk.Button(btn_frame, text="Exit", command=self._on_close).pack(side="left")
 
         self.password_entry.bind("<Return>", lambda _: self._submit())
 
@@ -65,6 +47,8 @@ class CredentialsDialog:
         x = (self.dialog.winfo_screenwidth() - w) // 2
         y = (self.dialog.winfo_screenheight() - h) // 2
         self.dialog.geometry(f"+{x}+{y}")
+
+        show_tutorial_if_needed(self.dialog, "login")
 
     def _submit(self):
         username = self.username_entry.get().strip()
