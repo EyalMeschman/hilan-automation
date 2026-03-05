@@ -157,7 +157,10 @@ def _ask_manual_action(date_str: str, report_type: str):
     ).pack(pady=(0, 12))
 
     ttk.Button(
-        frame, text="Continue", width=12, bootstyle="success",
+        frame,
+        text="Continue",
+        width=12,
+        bootstyle="success",
         command=lambda: (dialog.quit(), dialog.destroy()),
     ).pack()
 
