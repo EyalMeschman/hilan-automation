@@ -3,7 +3,9 @@ from pathlib import Path
 
 playwright_driver = Path(importlib.import_module("playwright").__file__).parent / "driver"
 
-tcl_tk_prefix = Path("/opt/homebrew/Cellar/tcl-tk/9.0.3/lib")
+import subprocess
+
+tcl_tk_prefix = Path(subprocess.check_output(["brew", "--prefix", "tcl-tk"]).decode().strip()) / "lib"
 
 a = Analysis(
     ["run.py"],
