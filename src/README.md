@@ -29,9 +29,7 @@ src/
 ├── credentials.py      Login dialog, keyring read/write
 ├── config.py           Config file (~/.hilan-automation/config.json)
 ├── tutorial.py         First-run tutorial dialogs
-├── utils.py            Browser args, fingerprint shim
-├── assets/
-│   └── fingerprint_shim.js
+├── utils.py            Browser launch args
 └── ui/
     ├── dialogs.py      Manual action + confirm-before-save modals
     └── tk_utils.py     Tkinter helpers

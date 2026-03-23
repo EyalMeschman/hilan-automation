@@ -15,7 +15,7 @@ from src.hilan import (
     wait_for_tasks,
 )
 from src.ui.dialogs import TkCallbacks
-from src.utils import BROWSER_LAUNCH_ARGS, cover_footprints
+from src.utils import BROWSER_LAUNCH_ARGS
 
 
 @dataclass(slots=True)
@@ -51,8 +51,6 @@ async def run(
             bypass_csp=True,
             ignore_https_errors=True,
         )
-        await cover_footprints(context)
-
         page = await context.new_page()
         page.on("console", lambda msg: logger.debug(msg.text))
 
