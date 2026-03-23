@@ -7,6 +7,7 @@ FINGERPRINT_SHIM_PATH = Path(__file__).parent / "assets" / "fingerprint_shim.js"
 BROWSER_LAUNCH_ARGS = [
     "--disable-blink-features=AutomationControlled",
     "--disable-features=IsolateOrigins,site-per-process",
+    "--no-sandbox",
 ]
 
 

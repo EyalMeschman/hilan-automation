@@ -6,3 +6,4 @@ nul
 report_overrides.json
 build/
 dist/
+*.png

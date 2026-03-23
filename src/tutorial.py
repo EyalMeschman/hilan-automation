@@ -73,6 +73,15 @@ TUTORIALS: dict[ConfigKey, list[dict[str, str]]] = {
             ),
         },
         {
+            "title": "Important Limitation",
+            "body": (
+                "This tool only fills dates that haven't been\n"
+                "reported yet and still need to be filled.\n\n"
+                "It cannot modify dates that were already\n"
+                "submitted."
+            ),
+        },
+        {
             "title": "Running the Automation",
             "body": (
                 "When you're ready, click 'Run' to start.\n\n"

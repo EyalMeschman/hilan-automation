@@ -1,18 +1,63 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      delete_old:
+        description: "Delete all previous releases"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
-  build:
+  release:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Calculate new version
+        id: version
+        run: |
+          latest=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            echo "new_tag=v1.0.0" >> "$GITHUB_OUTPUT"
+          else
+            major=$(echo "$latest" | sed 's/v//' | cut -d. -f1)
+            minor=$(echo "$latest" | sed 's/v//' | cut -d. -f2)
+            patch=$(echo "$latest" | sed 's/v//' | cut -d. -f3)
+            case "${{ inputs.bump }}" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+            esac
+            echo "new_tag=v${major}.${minor}.${patch}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify tag does not exist
+        env:
+          NEW_TAG: ${{ steps.version.outputs.new_tag }}
+        run: |
+          if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $NEW_TAG already exists"
+            exit 1
+          fi
 
       - uses: actions/setup-python@v5
         with:
@@ -32,8 +77,28 @@ jobs:
       - name: Zip app bundle
         run: cd dist && zip -r "Hilan.Automation.zip" "Hilan Automation.app"
 
+      - name: Delete old releases
+        if: ${{ inputs.delete_old }}
+        run: |
+          for tag in $(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname); do
+            echo "Deleting release $tag..."
+            gh release delete "$tag" --yes --cleanup-tag
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create tag and release
+        env:
+          NEW_TAG: ${{ steps.version.outputs.new_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag "$NEW_TAG"
+          git push origin "$NEW_TAG"
+          echo "Published **$NEW_TAG**" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
           files: dist/Hilan.Automation.zip
           generate_release_notes: true

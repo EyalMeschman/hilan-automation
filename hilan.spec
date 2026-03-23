@@ -63,4 +63,5 @@ app = BUNDLE(
     coll,
     name="Hilan Automation.app",
     bundle_identifier="com.hilan.automation",
+    icon="icon.icns",
 )
