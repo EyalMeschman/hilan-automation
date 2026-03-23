@@ -21,6 +21,6 @@ jobs:
 
       - name: Run Linter
         run: |
-          uv sync
+          uv sync --extra dev
           uv run ruff format --check .
           uv run ruff check .

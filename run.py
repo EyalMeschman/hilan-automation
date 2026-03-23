@@ -168,15 +168,20 @@ class HilanLauncher:
         confirm = self.confirm_var.get()
 
         self.root.withdraw()
-        result = asyncio.run(
-            run_automation(
-                self.root,
-                self.overrides,
-                username=self.username,
-                password=self.password,
-                confirm_before_save=confirm,
+        try:
+            result = asyncio.run(
+                run_automation(
+                    self.root,
+                    self.overrides,
+                    username=self.username,
+                    password=self.password,
+                    confirm_before_save=confirm,
+                )
             )
-        )
+        except Exception as exc:
+            self.root.deiconify()
+            messagebox.showerror("Automation Error", f"Failed to start automation:\n\n{exc}", parent=self.root)
+            return
         self.root.deiconify()
 
         if result.user_exit:
