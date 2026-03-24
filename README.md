@@ -18,7 +18,11 @@ Download the latest version from [GitHub Releases](https://github.com/EyalMeschm
 1. Download `Hilan.Automation.zip`
 2. Unzip it
 3. Drag `Hilan Automation.app` to your Applications folder
-4. Since the app isn't signed with an Apple Developer certificate, macOS will block it on first launch. To fix this, open **Terminal** and copy the following command:
+4. Since the app isn't signed with an Apple Developer certificate, macOS will block it on first launch:
+
+![macOS block warning](tutorial_images/apple_block.png)
+
+To fix this, open **Terminal** and copy the following command:
 
 ```
 xattr -cr "/Applications/Hilan Automation.app"
