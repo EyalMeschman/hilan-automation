@@ -13,7 +13,7 @@ A macOS desktop app that automates filling Hilan (Tipalti) attendance reports. I
 
 ## Download
 
-Download the latest version from [GitHub Releases](https://github.com/EyalMeschman/hilan-automation/releases/download/v2.1.0/Hilan.Automation.zip).
+Download the latest version from [GitHub Releases](https://github.com/EyalMeschman/hilan-automation/releases/download/v2.2.0/Hilan.Automation.zip).
 
 1. Download `Hilan.Automation.zip`
 2. Unzip it
