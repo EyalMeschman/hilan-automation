@@ -71,8 +71,8 @@ jobs:
 
       - name: Build app
         run: |
-          chmod +x build.sh
-          ./build.sh
+          chmod +x packaging/build.sh
+          ./packaging/build.sh
 
       - name: Zip app bundle
         run: cd dist && zip -r "Hilan.Automation.zip" "Hilan Automation.app"

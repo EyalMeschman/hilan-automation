@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" alt="Hilan Automation" width="128">
+</p>
+
 # Hilan Automation
 
 A macOS desktop app that automates filling Hilan (Tipalti) attendance reports. Instead of manually clicking through each day's report on the Hilan portal, this app logs in for you, reads pending reports, and fills them based on your schedule -- all through a simple GUI.
@@ -13,23 +17,15 @@ Download the latest version from [GitHub Releases](https://github.com/EyalMeschm
 
 1. Download `Hilan.Automation.zip`
 2. Unzip it
-3. Drag `Hilan Automation.app` to your Applications folder (or wherever you prefer)
+3. Drag `Hilan Automation.app` to your Applications folder and remove the quarantine flag:
 
-### First launch
-
-Since the app is not signed with an Apple Developer certificate, macOS will block it on first launch. Before opening the app, run this command in your Terminal:
-
-```
-xattr -cr "/Applications/Hilan Automation.app"
-```
-
-This removes the macOS quarantine flag and only needs to be done once.
+![Drag app to Applications](tutorial_images/drag_app.png)
 
 ### Keychain access prompt
 
-When you open the app, macOS may ask for your Mac login password with a dialog saying _"Hilan Automation wants to use your confidential information stored in 'hilan-automation' in your keychain."_
+When you open the app, macOS may ask for your Mac login password:
 
-This is expected -- the app uses the macOS Keychain to securely store your Hilan password (if you checked "Remember me"). Click **Always Allow** so you won't be prompted again on future launches.
+![Keychain access prompt](tutorial_images/allow_keychain.png)
 
 ## Usage
 
@@ -37,9 +33,15 @@ This is expected -- the app uses the macOS Keychain to securely store your Hilan
 
 On first launch, you'll be asked for your **Hilan Employee ID** and **password**.
 
+![Login page](tutorial_images/login_page.png)
+
 Check **Remember me** to save your credentials locally:
 - Username is stored in `~/.hilan-automation/config.json`
 - Password is stored securely in your **macOS Keychain** (search for `hilan-automation` in Keychain Access to view or delete it)
+
+### Main screen
+
+![Main page](tutorial_images/main_page.png)
 
 ### Default schedule
 

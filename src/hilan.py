@@ -1,13 +1,17 @@
-import asyncio
 import json
 import logging
 import re
+import time
 from enum import StrEnum
 from pathlib import Path
 from typing import Protocol
 
-from playwright.async_api import Frame, Page
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.select import Select
+from selenium.webdriver.support.wait import WebDriverWait
 
 LOGIN_URL = "https://tipalti.net.hilan.co.il/login"
 HOME_URL = "https://tipalti.net.hilan.co.il/Hilannetv2/ng/personal-file/home"
@@ -83,21 +87,27 @@ class AutomationCallbacks(Protocol):
     def on_confirm(self, date_str: str, report_type: str) -> tuple[ConfirmAction, str | None]: ...
 
 
-async def login(page: Page, username: str, password: str):
-    await page.goto(LOGIN_URL)
-    await page.get_by_placeholder("מספר העובד").fill(username)
-    await page.get_by_placeholder("סיסמה").fill(password)
-    await page.get_by_role("button", name="כניסה", exact=True).click()
-    await page.wait_for_url(HOME_URL, timeout=10000)
+def login(driver: WebDriver, username: str, password: str):
+    driver.get(LOGIN_URL)
+    username_input = driver.find_element(By.CSS_SELECTOR, 'input[placeholder="מספר העובד"]')
+    username_input.clear()
+    username_input.send_keys(username)
+    password_input = driver.find_element(By.CSS_SELECTOR, 'input[placeholder="סיסמה"]')
+    password_input.clear()
+    password_input.send_keys(password)
+    driver.find_element(By.XPATH, '//button[normalize-space()="כניסה"]').click()
+    WebDriverWait(driver, 10).until(EC.url_to_be(HOME_URL))
 
 
-async def get_error_handling_frame(page: Page, timeout: int = 5000) -> Frame:
-    deadline = asyncio.get_event_loop().time() + timeout / 1000
-    while asyncio.get_event_loop().time() < deadline:
-        for frame in page.frames:
-            if "EmployeeErrorHandling" in frame.url:
-                return frame
-        await asyncio.sleep(0.3)
+def switch_to_error_handling_frame(driver: WebDriver, timeout: int = 5000) -> None:
+    deadline = time.monotonic() + timeout / 1000
+    while time.monotonic() < deadline:
+        for iframe in driver.find_elements(By.TAG_NAME, "iframe"):
+            src = iframe.get_attribute("src") or ""
+            if "EmployeeErrorHandling" in src:
+                driver.switch_to.frame(iframe)
+                return
+        time.sleep(0.3)
     raise ValueError("Could not find EmployeeErrorHandling iframe")
 
 
@@ -134,17 +144,17 @@ def _handle_manual_action_if_needed(
         logger.info("User completed manual action, continuing...")
 
 
-async def fill_report(
-    page: Page,
+def fill_report(
+    driver: WebDriver,
     logger: logging.Logger,
     overrides: dict[str, ReportType],
     callbacks: AutomationCallbacks,
     *,
     confirm_before_save: bool = False,
 ):
-    frame = await get_error_handling_frame(page)
+    switch_to_error_handling_frame(driver)
 
-    day_text = await frame.locator(".ROC").first.inner_text()
+    day_text = driver.find_element(By.CSS_SELECTOR, ".ROC").text
     date_str = extract_date(day_text)
 
     report_type = overrides.get(date_str)
@@ -156,7 +166,7 @@ async def fill_report(
     else:
         logger.info(f"Loaded {len(overrides)} date override(s): {overrides}")
 
-    await frame.locator("select").first.select_option(label=report_type)
+    Select(driver.find_element(By.CSS_SELECTOR, "select")).select_by_visible_text(report_type)
 
     logger.info(f"{day_text} -> {report_type}")
 
@@ -170,7 +180,7 @@ async def fill_report(
                     break
                 case ConfirmAction.CHANGE:
                     report_type = ReportType(new_type)
-                    await frame.locator("select").first.select_option(label=report_type)
+                    Select(driver.find_element(By.CSS_SELECTOR, "select")).select_by_visible_text(report_type)
                     logger.info(f"User changed type for {date_str} -> {report_type}")
                     _handle_manual_action_if_needed(date_str, report_type, logger, callbacks)
                     continue
@@ -180,13 +190,14 @@ async def fill_report(
                 case _:
                     raise RuntimeError(f"Unexpected confirm action: {action}")
 
-    await frame.locator('input[value="שמור וסגור"]').click()
-    await page.goto(HOME_URL)
+    driver.find_element(By.CSS_SELECTOR, 'input[value="שמור וסגור"]').click()
+    driver.switch_to.default_content()
+    driver.get(HOME_URL)
 
 
-async def wait_for_tasks(page: Page, timeout: int = 10000) -> int:
+def wait_for_tasks(driver: WebDriver, timeout: int = 10000) -> int:
     try:
-        await page.locator(TASK_BUTTON_SELECTOR).first.wait_for(timeout=timeout)
-    except PlaywrightTimeoutError:
+        WebDriverWait(driver, timeout / 1000).until(EC.presence_of_element_located((By.CSS_SELECTOR, TASK_BUTTON_SELECTOR)))
+    except TimeoutException:
         return 0
-    return await page.locator(TASK_BUTTON_SELECTOR).count()
+    return len(driver.find_elements(By.CSS_SELECTOR, TASK_BUTTON_SELECTOR))
