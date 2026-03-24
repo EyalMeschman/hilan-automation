@@ -17,7 +17,14 @@ Download the latest version from [GitHub Releases](https://github.com/EyalMeschm
 
 1. Download `Hilan.Automation.zip`
 2. Unzip it
-3. Drag `Hilan Automation.app` to your Applications folder and remove the quarantine flag:
+3. Drag `Hilan Automation.app` to your Applications folder
+4. Since the app isn't signed with an Apple Developer certificate, macOS will block it on first launch. To fix this, open **Terminal** and copy the following command:
+
+```
+xattr -cr "/Applications/Hilan Automation.app"
+```
+
+This removes the macOS quarantine flag and only needs to be done once.
 
 ![Drag app to Applications](tutorial_images/drag_app.png)
 
@@ -31,15 +38,17 @@ When you open the app, macOS may ask for your Mac login password:
 
 ### Login
 
-On first launch, you'll be asked for your **Hilan Employee ID** and **password**.
+On first launch, a short tutorial will walk you through the app, Follow the steps.
+
+You'll be asked for your **Hilan Employee ID** and **password**.
 
 ![Login page](tutorial_images/login_page.png)
 
 Check **Remember me** to save your credentials locally:
 - Username is stored in `~/.hilan-automation/config.json`
-- Password is stored securely in your **macOS Keychain** (search for `hilan-automation` in Keychain Access to view or delete it)
+- Password is stored securely in your **macOS Keychain** (OPTIONAL: search for `hilan-automation` in Keychain Access to view or delete it)
 
-### Main screen
+### Main page
 
 ![Main page](tutorial_images/main_page.png)
 

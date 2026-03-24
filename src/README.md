@@ -84,7 +84,7 @@ Users download the latest release from:
 
 ### GitHub storage limits
 
-The **GitHub Free plan** provides **500 MB** of storage for release assets. Each release zip is approximately **27 MB**, so you can keep many releases before hitting the limit.
+The **GitHub Free plan** provides **500 MB** of storage for release assets.
 
 To manage this:
 - Use the **Delete all previous releases** checkbox when creating a new release
