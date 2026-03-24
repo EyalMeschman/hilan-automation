@@ -18,19 +18,20 @@ Download the latest version from [GitHub Releases](https://github.com/EyalMeschm
 1. Download `Hilan.Automation.zip`
 2. Unzip it
 3. Drag `Hilan Automation.app` to your Applications folder
-4. Since the app isn't signed with an Apple Developer certificate, macOS will block it on first launch:
+
+![Drag app to Applications](tutorial_images/drag_app.png)
+
+4. Since the app isn't signed with an Apple Developer certificate, macOS will block it on first launch with a warning like this:
 
 ![macOS block warning](tutorial_images/apple_block.png)
 
-To fix this, open **Terminal** and copy the following command:
+To fix this, open your **Terminal** and copy the following command:
 
 ```
 xattr -cr "/Applications/Hilan Automation.app"
 ```
 
-This removes the macOS quarantine flag and only needs to be done once.
-
-![Drag app to Applications](tutorial_images/drag_app.png)
+This removes the macOS quarantine flag, only needs to be done once.
 
 ### Keychain access prompt
 
