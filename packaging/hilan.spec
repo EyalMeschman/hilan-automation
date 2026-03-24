@@ -73,5 +73,6 @@ app = BUNDLE(
     icon=str(ROOT / "assets" / "icon.icns"),
     info_plist={
         "NSHighResolutionCapable": True,
+        "NSPrincipalClass": "NSApplication",
     },
 )

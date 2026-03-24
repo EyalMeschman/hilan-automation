@@ -12,7 +12,7 @@ from src.config import ConfigKey, clear_fields, load_config, update_config
 from src.credentials import KEYRING_SERVICE, ensure_credentials
 from src.hilan import ReportType
 from src.tutorial import show_tutorial_if_needed
-from src.ui.tk_utils import suppress_bgerror
+from src.ui.tk_utils import fix_retina_scaling, suppress_bgerror
 
 REPORT_TYPE_VALUES = [member.value for member in ReportType]
 CHROME_APP_PATH = Path("/Applications/Google Chrome.app")
@@ -195,6 +195,7 @@ class HilanLauncher:
 
 def main():
     root = ttb.Window(themename="darkly")
+    fix_retina_scaling(root)
     suppress_bgerror(root)
     root.withdraw()
 
