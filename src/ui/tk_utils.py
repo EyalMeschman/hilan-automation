@@ -2,34 +2,22 @@ import sys
 
 import ttkbootstrap as ttb
 
+RETINA_SCALE = 2.0
+
 
 def fix_retina_scaling(window: ttb.Window) -> None:
     """Fix Tk DPI scaling for PyInstaller bundles on macOS Retina displays.
 
     Bundled Tk may not detect the backing scale factor, causing the UI
-    to render at 1x.  Uses the ObjC runtime to read the real factor and
-    adjusts Tk's scaling when it appears too low.
+    to render at 1x.  When the reported scaling is suspiciously low on
+    a Mac (all modern Macs are Retina / 2x), double it.
     """
     if sys.platform != "darwin" or not getattr(sys, "_MEIPASS", None):
         return
     try:
-        from ctypes import c_double, c_void_p, cdll  # noqa: PLC0415
-
-        objc = cdll.LoadLibrary("/usr/lib/libobjc.dylib")
-        objc.objc_getClass.restype = c_void_p
-        objc.sel_registerName.restype = c_void_p
-        objc.objc_msgSend.restype = c_void_p
-
-        ns_screen = objc.objc_getClass(b"NSScreen")
-        main_screen = objc.objc_msgSend(ns_screen, objc.sel_registerName(b"mainScreen"))
-
-        objc.objc_msgSend.restype = c_double
-        scale = objc.objc_msgSend(main_screen, objc.sel_registerName(b"backingScaleFactor"))
-
-        if scale > 1.0:
-            current = float(window.tk.call("tk", "scaling"))
-            if current < 1.5:
-                window.tk.call("tk", "scaling", current * scale)
+        current = float(window.tk.call("tk", "scaling"))
+        if current < 1.5:
+            window.tk.call("tk", "scaling", current * RETINA_SCALE)
     except Exception:
         pass
 
