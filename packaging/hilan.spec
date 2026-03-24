@@ -71,4 +71,7 @@ app = BUNDLE(
     name="Hilan Automation.app",
     bundle_identifier="com.hilan.automation",
     icon=str(ROOT / "assets" / "icon.icns"),
+    info_plist={
+        "NSHighResolutionCapable": True,
+    },
 )

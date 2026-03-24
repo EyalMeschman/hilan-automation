@@ -27,8 +27,8 @@ TUTORIALS: dict[ConfigKey, list[dict[str, str]]] = {
             "body": (
                 "When 'Remember me' is checked, your password\n"
                 "is stored securely in your macOS Keychain.\n\n"
-                "To view it, open the Keychain Access app\n"
-                'and search for "hilan-automation".'
+                "OPTIONAL: To view it, open the Keychain Access\n"
+                'app and search for "hilan-automation".'
             ),
         },
         {
