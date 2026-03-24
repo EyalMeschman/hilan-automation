@@ -2,10 +2,11 @@ import logging
 import tkinter as tk
 from dataclasses import dataclass
 
-from playwright.async_api import TimeoutError as PlaywrightTimeout
-from playwright.async_api import async_playwright
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.common.by import By
 
-from logger import Logger
 from src.hilan import (
     TASK_BUTTON_SELECTOR,
     ReportType,
@@ -14,6 +15,7 @@ from src.hilan import (
     login,
     wait_for_tasks,
 )
+from src.logger import Logger
 from src.ui.dialogs import TkCallbacks
 from src.utils import BROWSER_LAUNCH_ARGS
 
@@ -29,7 +31,7 @@ class AutomationResult:
         return self.error is None
 
 
-async def run(
+def run(
     root: tk.Tk, overrides: dict[str, ReportType], *, username: str, password: str, confirm_before_save: bool = False
 ) -> AutomationResult:
     logger = Logger.create()
@@ -41,49 +43,43 @@ async def run(
 
     filled = 0
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            channel="chrome",
-            headless=False,
-            args=BROWSER_LAUNCH_ARGS,
-        )
-        context = await browser.new_context(
-            bypass_csp=True,
-            ignore_https_errors=True,
-        )
-        page = await context.new_page()
-        page.on("console", lambda msg: logger.debug(msg.text))
+    options = ChromeOptions()
+    for arg in BROWSER_LAUNCH_ARGS:
+        options.add_argument(arg)
+    options.add_argument("--ignore-certificate-errors")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
-        try:
-            await login(page, username, password)
-        except PlaywrightTimeout:
-            logger.exception("Login timed out")
-            return AutomationResult(error="Login failed. Please check your Employee ID and Password.")
-        except Exception:
-            logger.exception("Login failed")
-            return AutomationResult(error="Login failed due to an unexpected error. Please try again.")
+    driver = webdriver.Chrome(options=options)
 
-        try:
-            remaining = await wait_for_tasks(page)
-            logger.info(f"Found {remaining} pending reports to fill")
+    try:
+        login(driver, username, password)
+    except TimeoutException:
+        logger.exception("Login timed out")
+        driver.quit()
+        return AutomationResult(error="Login failed. Please check your Employee ID and Password.")
+    except Exception:
+        logger.exception("Login failed")
+        driver.quit()
+        return AutomationResult(error="Login failed due to an unexpected error. Please try again.")
 
-            while remaining > 0:
-                button = page.locator(TASK_BUTTON_SELECTOR).first
-                filled += 1
-                logger.info(f"[{filled}] Opening report...")
-                await button.click()
-                await fill_report(page, logger, overrides, callbacks, confirm_before_save=confirm_before_save)
-                remaining = await wait_for_tasks(page)
+    try:
+        remaining = wait_for_tasks(driver)
+        logger.info(f"Found {remaining} pending reports to fill")
 
-            logger.info(f"Done. Filled {filled} reports, no tasks remaining.")
-            return AutomationResult(filled=filled)
-        except UserExitError:
-            logger.info(f"User exited early after {filled} report(s).")
-            return AutomationResult(filled=filled, user_exit=True)
-        except Exception as exc:
-            logger.exception("Automation failed")
-            return AutomationResult(filled=filled, error=f"An error occurred while filling reports: {exc}")
-        finally:
-            await page.close()
-            await context.close()
-            await browser.close()
+        while remaining > 0:
+            driver.find_element(By.CSS_SELECTOR, TASK_BUTTON_SELECTOR).click()
+            filled += 1
+            logger.info(f"[{filled}] Opening report...")
+            fill_report(driver, logger, overrides, callbacks, confirm_before_save=confirm_before_save)
+            remaining = wait_for_tasks(driver)
+
+        logger.info(f"Done. Filled {filled} reports, no tasks remaining.")
+        return AutomationResult(filled=filled)
+    except UserExitError:
+        logger.info(f"User exited early after {filled} report(s).")
+        return AutomationResult(filled=filled, user_exit=True)
+    except Exception as exc:
+        logger.exception("Automation failed")
+        return AutomationResult(filled=filled, error=f"An error occurred while filling reports: {exc}")
+    finally:
+        driver.quit()

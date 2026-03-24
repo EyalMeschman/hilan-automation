@@ -1,4 +1,3 @@
-import asyncio
 import tkinter as tk
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -169,14 +168,12 @@ class HilanLauncher:
 
         self.root.withdraw()
         try:
-            result = asyncio.run(
-                run_automation(
-                    self.root,
-                    self.overrides,
-                    username=self.username,
-                    password=self.password,
-                    confirm_before_save=confirm,
-                )
+            result = run_automation(
+                self.root,
+                self.overrides,
+                username=self.username,
+                password=self.password,
+                confirm_before_save=confirm,
             )
         except Exception as exc:
             self.root.deiconify()

@@ -1,12 +1,12 @@
 [project]
 name = "hilan-automation"
 version = "0.1.0"
-description = "Automated Hilan attendance report filling using Playwright"
+description = "Automated Hilan attendance report filling using Selenium"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "keyring>=25.0.0",
-    "playwright>=1.40.0",
+    "selenium>=4.25.0",
     "python-dotenv>=1.0.0",
     "ttkbootstrap>=1.10.0",
 ]

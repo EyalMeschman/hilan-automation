@@ -10,29 +10,28 @@
 uv sync
 ```
 
-3. Install Playwright browsers:
-
-```bash
-uv run playwright install
-```
-
 ## Project structure
 
 ```
-run.py                  Entry point -- Tkinter GUI launcher
-logger.py               Logging setup
-hilan.spec              PyInstaller build spec
-build.sh                Build script (produces .app bundle)
+run.py                      Entry point -- Tkinter GUI launcher
 src/
-├── automation.py       Playwright lifecycle: launch, login, loop reports
-├── hilan.py            Hilan URLs, selectors, ReportType enum, fill logic
-├── credentials.py      Login dialog, keyring read/write
-├── config.py           Config file (~/.hilan-automation/config.json)
-├── tutorial.py         First-run tutorial dialogs
-├── utils.py            Browser launch args
+├── automation.py           Selenium lifecycle: launch, login, loop reports
+├── hilan.py                Hilan URLs, selectors, ReportType enum, fill logic
+├── credentials.py          Login dialog, keyring read/write
+├── config.py               Config file (~/.hilan-automation/config.json)
+├── tutorial.py             First-run tutorial dialogs
+├── logger.py               Logging setup
+├── utils.py                Browser launch args
 └── ui/
-    ├── dialogs.py      Manual action + confirm-before-save modals
-    └── tk_utils.py     Tkinter helpers
+    ├── dialogs.py          Manual action + confirm-before-save modals
+    └── tk_utils.py         Tkinter helpers
+assets/
+├── icon.png                App icon (PNG)
+└── icon.icns               App icon (macOS bundle)
+packaging/
+├── hilan.spec              PyInstaller build spec
+└── build.sh                Build script (produces .app bundle)
+tutorial_images/            Screenshots for README
 ```
 
 ## Running locally
@@ -55,7 +54,7 @@ Linting runs automatically on pull requests to `main` via the `linter.yml` workf
 The build produces a macOS `.app` bundle (arm64 only):
 
 ```bash
-./build.sh
+./packaging/build.sh
 ```
 
 Output: `dist/Hilan Automation.app`
@@ -85,7 +84,7 @@ Users download the latest release from:
 
 ### GitHub storage limits
 
-The **GitHub Free plan** provides **500 MB** of storage for release assets. Each release zip is approximately **139 MB**, so you can keep **at most 3 releases** before hitting the limit.
+The **GitHub Free plan** provides **500 MB** of storage for release assets. Each release zip is approximately **27 MB**, so you can keep many releases before hitting the limit.
 
 To manage this:
 - Use the **Delete all previous releases** checkbox when creating a new release
