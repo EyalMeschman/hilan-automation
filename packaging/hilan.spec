@@ -1,8 +1,13 @@
 import subprocess
+import tkinter
 from pathlib import Path
 
 ROOT = Path(SPECPATH).parent
-tcl_tk_prefix = Path(subprocess.check_output(["brew", "--prefix", "tcl-tk"]).decode().strip()) / "lib"
+
+tcl_ver = str(tkinter.TclVersion)
+tk_ver = str(tkinter.TkVersion)
+brew_formula = "tcl-tk" if tkinter.TkVersion >= 9.0 else "tcl-tk@8"
+tcl_tk_prefix = Path(subprocess.check_output(["brew", "--prefix", brew_formula]).decode().strip()) / "lib"
 
 a = Analysis(
     [str(ROOT / "run.py")],
@@ -10,8 +15,8 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(ROOT / "src"), "src"),
-        (str(tcl_tk_prefix / "tcl9.0"), "lib/tcl9.0"),
-        (str(tcl_tk_prefix / "tk9.0"), "lib/tk9.0"),
+        (str(tcl_tk_prefix / f"tcl{tcl_ver}"), f"lib/tcl{tcl_ver}"),
+        (str(tcl_tk_prefix / f"tk{tk_ver}"), f"lib/tk{tk_ver}"),
     ],
     hiddenimports=[
         "selenium",

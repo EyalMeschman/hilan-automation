@@ -59,18 +59,25 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
+      - name: Install build dependencies
+        run: brew install tcl-tk python@3.12 python-tk@3.12
 
       - name: Install uv
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
-      - name: Install tcl-tk
-        run: brew install tcl-tk
+      - name: Verify Tk version
+        run: |
+          PY="$(brew --prefix python@3.12)/libexec/bin/python3.12"
+          TK_VER=$("$PY" -c "import tkinter; print(tkinter.TkVersion)")
+          echo "Tk version: $TK_VER"
+          if [[ "$TK_VER" != 9.* ]]; then
+            echo "::error::Expected Tk 9.x but got $TK_VER"
+            exit 1
+          fi
 
       - name: Build app
         run: |
+          export UV_PYTHON="$(brew --prefix python@3.12)/libexec/bin/python3.12"
           chmod +x packaging/build.sh
           ./packaging/build.sh
 
