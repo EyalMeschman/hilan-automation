@@ -151,7 +151,7 @@ class TutorialDialog:
         self.dont_show_cb.grid(row=4, column=0, sticky="w")
 
         btn_frame = ttk.Frame(frame)
-        btn_frame.grid(row=4, column=1, columnspan=2, sticky="e")
+        btn_frame.grid(row=4, column=1, columnspan=2, sticky="e", padx=(16, 0))
 
         self.back_btn = ttk.Button(btn_frame, text="Back", command=self._back)
         self.back_btn.pack(side="left", padx=(0, 6))
