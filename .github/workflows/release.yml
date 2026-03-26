@@ -67,7 +67,7 @@ jobs:
 
       - name: Verify Tk version
         run: |
-          PY="$(brew --prefix python@3.12)/libexec/bin/python3.12"
+          PY="$(brew --prefix python@3.12)/bin/python3.12"
           TK_VER=$("$PY" -c "import tkinter; print(tkinter.TkVersion)")
           echo "Tk version: $TK_VER"
           if [[ "$TK_VER" != 9.* ]]; then
@@ -77,7 +77,7 @@ jobs:
 
       - name: Build app
         run: |
-          export UV_PYTHON="$(brew --prefix python@3.12)/libexec/bin/python3.12"
+          export UV_PYTHON="$(brew --prefix python@3.12)/bin/python3.12"
           chmod +x packaging/build.sh
           ./packaging/build.sh
 
