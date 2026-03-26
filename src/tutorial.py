@@ -82,13 +82,29 @@ TUTORIALS: dict[ConfigKey, list[dict[str, str]]] = {
             ),
         },
         {
+            "title": "Confirm before saving",
+            "body": (
+                "At the bottom left of this window is the checkbox\n"
+                "'Confirm before saving'.\n\n"
+                "When it's checked, a window pops up before each\n"
+                "date is submitted so you can review the report\n"
+                "before it goes through.\n\n"
+                "I'd suggest leaving it on for your first run or\n"
+                "two, it's a good way to see what will be sent\n"
+                "before you trust the automation fully.\n\n"
+                "If you don't want those pauses later on,\n"
+                "uncheck it, the automation will continue\n"
+                "without showing that window."
+            ),
+        },
+        {
             "title": "Running the Automation",
             "body": (
-                "When you're ready, click 'Run' to start.\n\n"
-                "Enable 'Confirm before saving' if you want to\n"
-                "review each report before it's submitted.\n\n"
-                "You can also remove entries or log out using\n"
-                "the buttons at the bottom."
+                "You can also remove selected rows from\n"
+                "the table or log out using the other\n"
+                "buttons along the bottom.\n\n"
+                "When you're ready, click 'Run' to start\n"
+                "the automation. Enjoy!"
             ),
         },
     ],
